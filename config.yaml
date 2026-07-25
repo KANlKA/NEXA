@@ -1,0 +1,5 @@
+user_name: "Kanika"
+wake_word: "hey nexa"
+speaker_similarity_threshold: 0.75   # raise this later if it's triggering on other voices
+
+# wont hardcode vals here
