@@ -3,7 +3,6 @@ import sounddevice as sd
 
 SAMPLE_RATE = 16000  # matches what both openWakeWord and Resemblyzer expect
 
-
 def record_seconds(duration: float) -> np.ndarray:
     """
     Records `duration` seconds of mono audio from the default mic.
