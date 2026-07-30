@@ -1,5 +1,4 @@
 #async pub-sub system.
-
 import asyncio
 from collections import defaultdict
 from typing import Callable, Awaitable, Any
@@ -22,11 +21,8 @@ class EventBus:
         if not handlers:
             return
         await asyncio.gather(*(handler(payload) for handler in handlers))
-
 # Singleton
 _bus_instance = None
-
-
 def get_event_bus() -> EventBus:
     global _bus_instance
     if _bus_instance is None:
