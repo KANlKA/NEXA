@@ -1,14 +1,18 @@
 """
 orchestrator.py
 
-The brain. Takes transcribed text, asks the LLM to choose which
-REGISTERED skill should handle it (constrained to skills that actually
-exist — see registry.py), executes that skill, and returns the result.
+The brain. Takes transcribed text and routes it to a skill in one of two ways:
 
-This is "Tier 1" (LLM-based routing) from the roadmap. Tier 0 (instant
-regex shortcuts for common commands, no LLM round-trip) and Tier 2
-(cloud fallback for anything the local model struggles with) get added
-later, once we've proven this core routing loop is reliable.
+  Tier 0 (fast path): check every registered skill's try_fast_match() first.
+  If one recognizes the command via simple pattern matching, run it
+  immediately — no LLM call, near-instant response.
+
+  Tier 1 (LLM routing): if no skill fast-matched, ask the local LLM to pick
+  from the REGISTERED skills (constrained — see registry.py) and extract
+  params. Slower, but handles phrasing Tier 0's simple patterns can't.
+
+Tier 2 (cloud fallback for cases the local model struggles with) is a
+future addition once we hit real cases that need it.
 """
 
 from nexa.llm import ask_structured
@@ -34,6 +38,16 @@ class Orchestrator:
 
     async def handle(self, text: str, context: dict | None = None) -> SkillResult:
         context = context or {}
+
+        # --- Tier 0: fast pattern matching, no LLM ---
+        for skill in self.registry.all_skills():
+            params = skill.try_fast_match(text)
+            if params is not None:
+                print(f"[Tier 0] Fast-matched '{skill.name}' — skipping LLM.")
+                return await skill.execute(params, context)
+
+        # --- Tier 1: LLM-based routing ---
+        print("[Tier 1] No fast match — asking the LLM to route this.")
         system_prompt = SYSTEM_PROMPT_TEMPLATE.format(skills=self.registry.describe_for_llm())
 
         try:

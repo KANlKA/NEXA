@@ -45,6 +45,21 @@ class Skill(ABC):
         """
         raise NotImplementedError
 
+    def try_fast_match(self, text: str) -> dict | None:
+        """
+        Optional "Tier 0" check: can this skill handle `text` with a cheap,
+        deterministic pattern match — no LLM call needed?
+
+        Return a params dict if yes (execute() runs immediately with these
+        params). Return None if this skill can't confidently handle it,
+        deferring to the LLM (Tier 1) instead.
+
+        Default: never fast-matches. Skills opt in by overriding this.
+        Keep these patterns CONSERVATIVE — a wrong fast match is worse than
+        falling back to the (slower but smarter) LLM.
+        """
+        return None
+
     def can_handle(self, intent: str) -> bool:
         """
         Cheap check: does this skill handle a given intent name?

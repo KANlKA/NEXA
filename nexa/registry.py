@@ -21,6 +21,9 @@ class SkillRegistry:
     def get(self, name: str) -> Skill | None:
         return self._skills.get(name)
 
+    def all_skills(self) -> list[Skill]:
+        return list(self._skills.values())
+
     def describe_for_llm(self) -> str:
         """Formats every registered skill as a line the LLM prompt can include."""
         lines = [f'- "{skill.name}": {skill.description}' for skill in self._skills.values()]
