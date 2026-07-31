@@ -1,5 +1,8 @@
 user_name: "Kanika"
 wake_word: "hey nexa"
-speaker_similarity_threshold: 0.70   # raise this later if it's triggering on other voices
-
+speaker_similarity_threshold: 0.50   # raise this later if it's triggering on other voices
+# Once you've trained a custom "Hey Nexa" model (see roadmap Phase 1), put the
+# downloaded .onnx file in nexa/models/ and point this at it, e.g.:
+# wake_word_model_path: "nexa/models/hey_nexa.onnx"
+wake_word_model_path: ""
 # wont hardcode vals here

@@ -1,8 +1,19 @@
-#Defines the contract every skill (AppControl, Coding, Browser, Memory...) must follow. This is what lets the orchestrator route ANY command to ANY skill without needing an if/elif chain that knows about every feature.
+"""
+base.py
+
+Defines the contract every skill (AppControl, Coding, Browser, Memory...)
+must follow. This is what lets the orchestrator route ANY command to ANY
+skill without needing an if/elif chain that knows about every feature.
+
+If you've done OOP before: this is an abstract base class (ABC).
+It can't be instantiated directly — it just defines "if you want to be
+a Skill, you MUST implement these methods."
+"""
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any
+
 
 @dataclass
 class SkillResult:
@@ -12,9 +23,17 @@ class SkillResult:
     data: dict = field(default_factory=dict)   # any structured data (e.g. file paths found)
     cacheable: bool = False        # can this exact result be reused for a repeat command?
 
+
 class Skill(ABC):
     # Every skill names itself — used for logging and routing decisions.
     name: str = "unnamed_skill"
+
+    # Plain-English description of what this skill does and what params it
+    # expects, e.g. 'Opens a macOS app. params: {"app_name": "Chrome"}'.
+    # This is what gets shown to the LLM so it knows what's actually
+    # available to call — without this, the model invents skill names
+    # that don't exist.
+    description: str = ""
 
     @abstractmethod
     async def execute(self, params: dict, context: dict) -> SkillResult:
