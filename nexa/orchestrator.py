@@ -18,6 +18,7 @@ future addition once we hit real cases that need it.
 from nexa.llm import ask_structured
 from nexa.registry import SkillRegistry
 from nexa.skills.base import SkillResult
+from nexa.cache import get_cached_decision, set_cached_decision
 
 SYSTEM_PROMPT_TEMPLATE = """You are Nexa's command router. Given a transcribed voice command, decide which skill should handle it and what parameters to extract from the command.
 
@@ -46,15 +47,20 @@ class Orchestrator:
                 print(f"[Tier 0] Fast-matched '{skill.name}' — skipping LLM.")
                 return await skill.execute(params, context)
 
-        # --- Tier 1: LLM-based routing ---
-        print("[Tier 1] No fast match — asking the LLM to route this.")
-        system_prompt = SYSTEM_PROMPT_TEMPLATE.format(skills=self.registry.describe_for_llm())
-
-        try:
-            decision = ask_structured(prompt=f'Command: "{text}"', system=system_prompt)
-        except ValueError:
-            # Model failed to return parseable JSON at all
-            return SkillResult(success=False, spoken_response="I had trouble understanding that.")
+        # --- Tier 1: LLM-based routing (with exact-match cache) ---
+        cached_decision = get_cached_decision(text)
+        if cached_decision is not None:
+            print("[Cache] Reusing a previous routing decision — skipping LLM call.")
+            decision = cached_decision
+        else:
+            print("[Tier 1] No fast match or cache hit — asking the LLM to route this.")
+            system_prompt = SYSTEM_PROMPT_TEMPLATE.format(skills=self.registry.describe_for_llm())
+            try:
+                decision = ask_structured(prompt=f'Command: "{text}"', system=system_prompt)
+            except ValueError:
+                # Model failed to return parseable JSON at all
+                return SkillResult(success=False, spoken_response="I had trouble understanding that.")
+            set_cached_decision(text, decision)
 
         skill_name = decision.get("skill", "none")
         params = decision.get("params", {})
